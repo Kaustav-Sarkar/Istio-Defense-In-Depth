@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms3-hardware-assets
+  namespace: zt-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms3-hardware-assets
+  template:
+    metadata:
+      labels:
+        app: ms3-hardware-assets
+        tier: tier2
+    spec:
+      serviceAccountName: ms3-hardware-assets-sa
+      containers:
+        - name: ms3
+          image: local/ms3-hardware-assets:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://ms3_app:ms3_pass@postgres.zt-data.svc.cluster.local:5432/hr_directory"
+            - name: CERBOS_URL
+              value: "http://cerbos.zt-security.svc.cluster.local:3592"
+            - name: CERBOS_TIMEOUT_SECONDS
+              value: "2.0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms3-hardware-assets
+  namespace: zt-apps
+spec:
+  selector:
+    app: ms3-hardware-assets
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000

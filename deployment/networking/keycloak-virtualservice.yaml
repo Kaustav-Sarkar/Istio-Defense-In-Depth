@@ -1,0 +1,23 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: keycloak-vs
+  namespace: zt-identity
+spec:
+  hosts:
+    - "idp.localtest.me"
+  gateways:
+    - istio-system/public-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /realms/
+        - uri:
+            prefix: /resources/
+        - uri:
+            prefix: /.well-known/
+      route:
+        - destination:
+            host: keycloak.zt-identity.svc.cluster.local
+            port:
+              number: 8080

@@ -1,0 +1,36 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: public-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "app.localtest.me"
+        - "idp.localtest.me"
+      tls:
+        httpsRedirect: true
+    - port:
+        number: 443
+        name: https-app
+        protocol: HTTPS
+      hosts:
+        - "app.localtest.me"
+      tls:
+        mode: SIMPLE
+        credentialName: app-localtest-me-tls
+    - port:
+        number: 443
+        name: https-idp
+        protocol: HTTPS
+      hosts:
+        - "idp.localtest.me"
+      tls:
+        mode: SIMPLE
+        credentialName: idp-localtest-me-tls

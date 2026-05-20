@@ -1,0 +1,11 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: default
+  resource: office_location
+  rules:
+    - actions: ["view", "list"]
+      effect: EFFECT_ALLOW
+      roles: ["employee", "manager", "hr_admin", "it_admin", "public_data_admin", "security_auditor", "public"]
+    - actions: ["create", "update", "delete"]
+      effect: EFFECT_ALLOW
+      roles: ["public_data_admin"]

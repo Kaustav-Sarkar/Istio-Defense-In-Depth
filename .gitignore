@@ -1,0 +1,43 @@
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+# Kubernetes/Helm/Istio temporary files
+*.kubeconfig
+
+# Logs
+*.log
+
+# Scripts execution
+tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local certs
+.local/
+
+# Kind postgres host mount
+/data/
+
+# Assistant files
+CLAUDE.md
+.cursor/
+.claude/
+
+# Local markdown lint config
+.markdownlint.json
+.markdownlint-cli2.jsonc
+

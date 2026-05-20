@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cerbos-test
+  namespace: zt-security
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: test
+          image: ghcr.io/cerbos/cerbos:0.35.0
+          args: ["compile", "/policies", "--tests", "/tests"]
+          volumeMounts:
+            - name: policies
+              mountPath: /policies
+            - name: tests
+              mountPath: /tests
+      volumes:
+        - name: policies
+          configMap:
+            name: cerbos-policies
+        - name: tests
+          configMap:
+            name: cerbos-tests

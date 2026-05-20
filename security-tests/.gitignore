@@ -1,0 +1,3 @@
+reports/*.md
+__pycache__/
+*.pyc

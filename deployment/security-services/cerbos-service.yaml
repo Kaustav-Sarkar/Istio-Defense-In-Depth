@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cerbos
+  namespace: zt-security
+spec:
+  ports:
+    - name: http
+      port: 3592
+      targetPort: 3592
+    - name: grpc
+      port: 3593
+      targetPort: 3593
+  selector:
+    app: cerbos
