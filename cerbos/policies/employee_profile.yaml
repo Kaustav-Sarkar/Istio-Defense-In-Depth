@@ -1,0 +1,50 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: default
+  resource: employee_profile
+  rules:
+    - actions: ["view", "list"]
+      effect: EFFECT_ALLOW
+      roles: ["employee", "it_admin"]
+      output:
+        expr: |-
+          {
+            "mask_profile": "public_only",
+            "visible_fields": ["name", "title", "department"]
+          }
+          
+    - actions: ["view_sensitive", "update"]
+      effect: EFFECT_ALLOW
+      roles: ["employee"]
+      condition:
+        match:
+          expr: request.principal.id == request.resource.attr.id
+      output:
+        expr: |-
+          {
+            "mask_profile": "unmasked",
+            "visible_fields": ["name", "title", "department", "salary_band", "base_salary", "ssn"]
+          }
+          
+    - actions: ["view_sensitive"]
+      effect: EFFECT_ALLOW
+      roles: ["manager"]
+      condition:
+        match:
+          expr: request.principal.id == request.resource.attr.manager_id
+      output:
+        expr: |-
+          {
+            "mask_profile": "manager_view",
+            "visible_fields": ["name", "title", "department", "salary_band"]
+          }
+          
+    - actions: ["view", "view_sensitive", "list", "update"]
+      effect: EFFECT_ALLOW
+      roles: ["hr_admin"]
+      output:
+        expr: |-
+          {
+            "mask_profile": "unmasked",
+            "visible_fields": ["name", "title", "department", "salary_band", "base_salary", "ssn"]
+          }

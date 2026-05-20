@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cerbos-config
+  namespace: zt-security
+data:
+  conf.yaml: |
+    server:
+      httpListenAddr: ":3592"
+      grpcListenAddr: ":3593"
+    storage:
+      driver: "disk"
+      disk:
+        directory: /policies
+        watchForChanges: true
+    audit:
+      enabled: true
+      accessLogsEnabled: true
+      decisionLogsEnabled: true
+      backend: "local"
+      local:
+        storagePath: /audit

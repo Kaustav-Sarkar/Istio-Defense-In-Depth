@@ -1,0 +1,43 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: gateway-prestrip
+  namespace: istio-system
+spec:
+  priority: -100
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.ext_authz"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua.prestrip
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+            inlineCode: |
+              function envoy_on_request(request_handle)
+                local headers_to_remove = {}
+                for key, value in pairs(request_handle:headers()) do
+                  local lower_key = string.lower(key)
+                  if string.match(lower_key, "^x%-platform%-") or 
+                     string.match(lower_key, "^x%-role%-") or 
+                     lower_key == "x-mesh-identity" or 
+                     string.match(lower_key, "^x%-ms%d%-user") or 
+                     string.match(lower_key, "^x%-ms%d%-role") then
+                    table.insert(headers_to_remove, lower_key)
+                  end
+                end
+                for _, key in ipairs(headers_to_remove) do
+                  request_handle:headers():remove(key)
+                end
+              end

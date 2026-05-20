@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-migration
+  namespace: zt-data
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: postgres-migration
+    spec:
+      serviceAccountName: postgres-migration-sa
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15-alpine
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres.zt-data.svc.cluster.local -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"; do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+      containers:
+        - name: migrate
+          image: postgres:15-alpine
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: POSTGRES_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              set -euo pipefail
+              for migration in $(ls /migrations/*.sql | sort); do
+                echo "Applying ${migration}..."
+                psql -v ON_ERROR_STOP=1 \
+                  -h postgres.zt-data.svc.cluster.local \
+                  -U "${POSTGRES_USER}" \
+                  -d "${POSTGRES_DB}" \
+                  -f "${migration}"
+              done
+              echo "Migrations complete."
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+              readOnly: true
+      volumes:
+        - name: migrations
+          configMap:
+            name: postgres-migrations

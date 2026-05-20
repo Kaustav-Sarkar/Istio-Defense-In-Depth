@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-bootstrap
+  namespace: zt-security
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vault-bootstrap-role
+  namespace: zt-apps
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-bootstrap-rolebinding
+  namespace: zt-apps
+subjects:
+  - kind: ServiceAccount
+    name: vault-bootstrap
+    namespace: zt-security
+roleRef:
+  kind: Role
+  name: vault-bootstrap-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vault-bootstrap-role-sec
+  namespace: zt-security
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-bootstrap-rolebinding-sec
+  namespace: zt-security
+subjects:
+  - kind: ServiceAccount
+    name: vault-bootstrap
+    namespace: zt-security
+roleRef:
+  kind: Role
+  name: vault-bootstrap-role-sec
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-bootstrap
+  namespace: zt-security
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      serviceAccountName: vault-bootstrap
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: hashicorp/vault:1.15
+          env:
+            - name: VAULT_ADDR
+              value: "http://vault:8200"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              apk add --no-cache jq curl
+              
+              until curl -s http://vault:8200/v1/sys/health | jq -e 'has("initialized")' > /dev/null; do
+                echo "Waiting for Vault to start..."
+                sleep 2
+              done
+              
+              INIT_STATUS=$(curl -s http://vault:8200/v1/sys/health | jq -r '.initialized')
+              if [ "$INIT_STATUS" = "false" ]; then
+                echo "Initializing Vault..."
+                vault operator init -key-shares=1 -key-threshold=1 -format=json > /tmp/init.json
+                UNSEAL_KEY=$(jq -r '.unseal_keys_b64[0]' /tmp/init.json)
+                ROOT_TOKEN=$(jq -r '.root_token' /tmp/init.json)
+              else
+                echo "Vault is already initialized, using bootstrap root token if provided."
+                ROOT_TOKEN="${VAULT_BOOTSTRAP_TOKEN:-root}"
+              fi
+              
+              if [ "${UNSEAL_KEY:-}" != "" ]; then
+                echo "Unsealing Vault..."
+                vault operator unseal $UNSEAL_KEY
+              fi
+              
+              export VAULT_TOKEN=$ROOT_TOKEN
+              
+              echo "Enabling Transit engine..."
+              vault secrets enable transit || true
+              
+              echo "Creating mesh-identity key..."
+              vault write -f transit/keys/mesh-identity type=rsa-2048 || true
+              
+              echo "Creating auth-service policy..."
+              cat <<EOF > /tmp/auth-service-policy.hcl
+              path "transit/sign/mesh-identity" {
+                capabilities = ["update"]
+              }
+              path "transit/keys/mesh-identity" {
+                capabilities = ["read"]
+              }
+              EOF
+              vault policy write auth-service /tmp/auth-service-policy.hcl
+              
+              echo "Creating token for auth-service..."
+              APP_TOKEN=$(vault token create -policy=auth-service -period=768h -format=json | jq -r '.auth.client_token')
+              
+              echo "Exporting token to zt-apps namespace as a secret..."
+              # Use kubectl to create the secret
+              KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+              curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+              curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256"
+              echo "$(cat kubectl.sha256)  kubectl" | sha256sum -c -
+              chmod +x kubectl
+              ./kubectl create secret generic vault-auth-token --from-literal=token=$APP_TOKEN -n zt-apps --dry-run=client -o yaml | ./kubectl apply -f -
+              
+              echo "Exporting root token for tests..."
+              ./kubectl create secret generic vault-root-token --from-literal=token=$ROOT_TOKEN -n zt-security --dry-run=client -o yaml | ./kubectl apply -f -
+              
+              echo "Bootstrap complete."

@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm-import
+  namespace: zt-identity
+data:
+  istio-security-poc-realm.json: |
+    {
+      "realm": "istio-security-poc",
+      "enabled": true,
+      "registrationAllowed": false,
+      "loginWithEmailAllowed": true,
+      "roles": {
+        "realm": [
+          { "name": "employee" },
+          { "name": "manager" },
+          { "name": "hr_admin" },
+          { "name": "it_admin" },
+          { "name": "public_data_admin" },
+          { "name": "security_auditor" }
+        ]
+      },
+      "clients": [
+        {
+          "clientId": "auth-service",
+          "enabled": true,
+          "protocol": "openid-connect",
+          "publicClient": false,
+          "secret": "auth-service-client-secret-local-poc",
+          "standardFlowEnabled": true,
+          "directAccessGrantsEnabled": true,
+          "serviceAccountsEnabled": false,
+          "redirectUris": [
+            "https://app.localtest.me/auth/callback",
+            "https://app.localtest.me/"
+          ],
+          "webOrigins": [
+            "https://app.localtest.me"
+          ],
+          "attributes": {
+            "access.token.lifespan": "300"
+          }
+        }
+      ],
+      "users": [
+        {
+          "username": "alice.employee",
+          "enabled": true,
+          "email": "alice.employee@example.com",
+          "firstName": "Alice",
+          "lastName": "Employee",
+          "credentials": [
+            { "type": "password", "value": "alice-password", "temporary": false }
+          ],
+          "realmRoles": ["employee"]
+        },
+        {
+          "username": "mary.manager",
+          "enabled": true,
+          "email": "mary.manager@example.com",
+          "firstName": "Mary",
+          "lastName": "Manager",
+          "credentials": [
+            { "type": "password", "value": "mary-password", "temporary": false }
+          ],
+          "realmRoles": ["employee", "manager"]
+        },
+        {
+          "username": "henry.hradmin",
+          "enabled": true,
+          "email": "henry.hradmin@example.com",
+          "firstName": "Henry",
+          "lastName": "HR Admin",
+          "credentials": [
+            { "type": "password", "value": "henry-password", "temporary": false }
+          ],
+          "realmRoles": ["employee", "hr_admin", "public_data_admin"]
+        },
+        {
+          "username": "ivan.itadmin",
+          "enabled": true,
+          "email": "ivan.itadmin@example.com",
+          "firstName": "Ivan",
+          "lastName": "IT Admin",
+          "credentials": [
+            { "type": "password", "value": "ivan-password", "temporary": false }
+          ],
+          "realmRoles": ["employee", "it_admin"]
+        }
+      ]
+    }

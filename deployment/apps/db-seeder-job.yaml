@@ -1,0 +1,36 @@
+# POSTGRES_PASSWORD must match deployment/data/postgres-secret.template.yaml (zt-data)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: zt-apps
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: "admin_password"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-seeder
+  namespace: zt-apps
+spec:
+  template:
+    metadata:
+      labels:
+        app: db-seeder
+    spec:
+      serviceAccountName: db-seeder-sa
+      containers:
+      - name: db-seeder
+        image: local/db-seeder:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: POSTGRES_PASSWORD
+        - name: DATABASE_URL
+          value: "postgresql://postgres:$(POSTGRES_PASSWORD)@postgres.zt-data.svc.cluster.local:5432/hr_directory"
+      restartPolicy: Never
+  backoffLimit: 4

@@ -1,0 +1,25 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: default
+  resource: hardware_asset
+  rules:
+    - actions: ["view", "list"]
+      effect: EFFECT_ALLOW
+      roles: ["employee"]
+      condition:
+        match:
+          expr: request.principal.id == request.resource.attr.owner_id
+      output:
+        expr: |-
+          {
+            "asset_serial_mode": "truncated"
+          }
+          
+    - actions: ["view", "list", "assign", "update"]
+      effect: EFFECT_ALLOW
+      roles: ["it_admin"]
+      output:
+        expr: |-
+          {
+            "asset_serial_mode": "full"
+          }

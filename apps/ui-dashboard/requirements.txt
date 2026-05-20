@@ -1,0 +1,8 @@
+streamlit>=1.37.0
+requests
+pandas
+pytest>=8.1.1
+pytest-asyncio>=0.23.6
+sqlalchemy>=2.0.29
+asyncpg>=0.29.0
+testcontainers[postgres]>=4.0.0

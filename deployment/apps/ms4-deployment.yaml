@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms4-holiday-calendar
+  namespace: zt-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms4-holiday-calendar
+  template:
+    metadata:
+      labels:
+        app: ms4-holiday-calendar
+        tier: tier1
+    spec:
+      serviceAccountName: ms4-holiday-calendar-sa
+      containers:
+        - name: ms4
+          image: local/ms4-holiday-calendar:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://ms4_app:ms4_pass@postgres.zt-data.svc.cluster.local:5432/hr_directory"
+            - name: CERBOS_URL
+              value: "http://cerbos.zt-security.svc.cluster.local:3592"
+            - name: CERBOS_TIMEOUT_SECONDS
+              value: "2.0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms4-holiday-calendar
+  namespace: zt-apps
+spec:
+  selector:
+    app: ms4-holiday-calendar
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000

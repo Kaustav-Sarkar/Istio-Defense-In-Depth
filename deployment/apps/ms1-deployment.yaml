@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms1-profile-aggregator
+  namespace: zt-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms1-profile-aggregator
+  template:
+    metadata:
+      labels:
+        app: ms1-profile-aggregator
+        tier: tier1
+    spec:
+      serviceAccountName: ms1-profile-aggregator-sa
+      containers:
+        - name: ms1
+          image: local/ms1-profile-aggregator:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MS2_BASE_URL
+              value: "http://ms2-employee-details.zt-apps.svc.cluster.local:8000"
+            - name: MS3_BASE_URL
+              value: "http://ms3-hardware-assets.zt-apps.svc.cluster.local:8000"
+            - name: DOWNSTREAM_TIMEOUT_SECONDS
+              value: "5.0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms1-profile-aggregator
+  namespace: zt-apps
+spec:
+  selector:
+    app: ms1-profile-aggregator
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
