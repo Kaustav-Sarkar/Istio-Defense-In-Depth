@@ -1,0 +1,44 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: istio-system
+  name: istio-control-plane
+spec:
+  profile: default
+  meshConfig:
+    extensionProviders:
+      - name: "auth-service-extauthz"
+        envoyExtAuthzHttp:
+          service: "auth-service.zt-apps.svc.cluster.local"
+          port: 8000
+          pathPrefix: "/verify"
+          includeRequestHeadersInCheck:
+            - "cookie"
+            - "authorization"
+            - "x-request-id"
+          headersToUpstreamOnAllow:
+            - "x-mesh-identity"
+  components:
+    pilot:
+      k8s:
+        env:
+          - name: PILOT_JWT_ENABLE_REMOTE_JWKS
+            value: "true"
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          service:
+            type: NodePort
+            ports:
+              - port: 15021
+                targetPort: 15021
+                name: status-port
+              - port: 80
+                targetPort: 8080
+                nodePort: 30080
+                name: http2
+              - port: 443
+                targetPort: 8443
+                nodePort: 30443
+                name: https

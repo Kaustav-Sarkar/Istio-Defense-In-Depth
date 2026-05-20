@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms2-employee-details
+  namespace: zt-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms2-employee-details
+  template:
+    metadata:
+      labels:
+        app: ms2-employee-details
+        tier: tier2
+    spec:
+      serviceAccountName: ms2-employee-details-sa
+      containers:
+        - name: ms2
+          image: local/ms2-employee-details:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://ms2_app:ms2_pass@postgres.zt-data.svc.cluster.local:5432/hr_directory"
+            - name: CERBOS_URL
+              value: "http://cerbos.zt-security.svc.cluster.local:3592"
+            - name: CERBOS_TIMEOUT_SECONDS
+              value: "2.0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms2-employee-details
+  namespace: zt-apps
+spec:
+  selector:
+    app: ms2-employee-details
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000

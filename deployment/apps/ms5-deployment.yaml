@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms5-office-locations
+  namespace: zt-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms5-office-locations
+  template:
+    metadata:
+      labels:
+        app: ms5-office-locations
+        tier: tier1
+    spec:
+      serviceAccountName: ms5-office-locations-sa
+      containers:
+        - name: ms5
+          image: local/ms5-office-locations:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://ms5_app:ms5_pass@postgres.zt-data.svc.cluster.local:5432/hr_directory"
+            - name: CERBOS_URL
+              value: "http://cerbos.zt-security.svc.cluster.local:3592"
+            - name: CERBOS_TIMEOUT_SECONDS
+              value: "2.0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms5-office-locations
+  namespace: zt-apps
+spec:
+  selector:
+    app: ms5-office-locations
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000

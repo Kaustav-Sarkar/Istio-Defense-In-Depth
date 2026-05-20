@@ -1,0 +1,104 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: mesh-identity-ms1
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      app: ms1-profile-aggregator
+  jwtRules:
+    - issuer: "auth-service"
+      jwksUri: "http://auth-service.zt-apps.svc.cluster.local:8000/auth/jwks"
+      forwardOriginalToken: true
+      fromHeaders:
+        - name: "x-mesh-identity"
+      outputClaimToHeaders:
+        - header: "x-ms1-user"
+          claim: "sub"
+        - header: "x-ms1-role"
+          claim: "roles_csv"
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: mesh-identity-ms2
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      app: ms2-employee-details
+  jwtRules:
+    - issuer: "auth-service"
+      jwksUri: "http://auth-service.zt-apps.svc.cluster.local:8000/auth/jwks"
+      forwardOriginalToken: false
+      fromHeaders:
+        - name: "x-mesh-identity"
+      outputClaimToHeaders:
+        - header: "x-ms2-user"
+          claim: "sub"
+        - header: "x-ms2-role"
+          claim: "roles_csv"
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: mesh-identity-ms3
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      app: ms3-hardware-assets
+  jwtRules:
+    - issuer: "auth-service"
+      jwksUri: "http://auth-service.zt-apps.svc.cluster.local:8000/auth/jwks"
+      forwardOriginalToken: false
+      fromHeaders:
+        - name: "x-mesh-identity"
+      outputClaimToHeaders:
+        - header: "x-ms3-user"
+          claim: "sub"
+        - header: "x-ms3-role"
+          claim: "roles_csv"
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: mesh-identity-ms4
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      app: ms4-holiday-calendar
+  jwtRules:
+    - issuer: "auth-service"
+      jwksUri: "http://auth-service.zt-apps.svc.cluster.local:8000/auth/jwks"
+      forwardOriginalToken: false
+      fromHeaders:
+        - name: "x-mesh-identity"
+      outputClaimToHeaders:
+        - header: "x-ms4-user"
+          claim: "sub"
+        - header: "x-ms4-role"
+          claim: "roles_csv"
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: mesh-identity-ms5
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      app: ms5-office-locations
+  jwtRules:
+    - issuer: "auth-service"
+      jwksUri: "http://auth-service.zt-apps.svc.cluster.local:8000/auth/jwks"
+      forwardOriginalToken: false
+      fromHeaders:
+        - name: "x-mesh-identity"
+      outputClaimToHeaders:
+        - header: "x-ms5-user"
+          claim: "sub"
+        - header: "x-ms5-role"
+          claim: "roles_csv"

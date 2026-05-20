@@ -1,0 +1,34 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: header-projection-ms3
+  namespace: zt-apps
+spec:
+  priority: 10
+  workloadSelector:
+    labels:
+      app: ms3-hardware-assets
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.jwt_authn"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua.projection
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+            inlineCode: |
+              function envoy_on_request(request_handle)
+                -- Strip any incoming spoofed legacy headers
+                request_handle:headers():remove("x-ms3-user")
+                request_handle:headers():remove("x-ms3-role")
+                
+                -- Verified claim projection into x-ms3-* is handled by RequestAuthentication.
+              end

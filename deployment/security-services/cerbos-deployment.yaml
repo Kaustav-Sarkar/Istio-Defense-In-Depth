@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cerbos
+  namespace: zt-security
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cerbos
+  template:
+    metadata:
+      labels:
+        app: cerbos
+    spec:
+      serviceAccountName: cerbos-sa
+      containers:
+        - name: cerbos
+          image: ghcr.io/cerbos/cerbos:0.35.0
+          args: ["server", "--config=/config/conf.yaml"]
+          ports:
+            - containerPort: 3592
+            - containerPort: 3593
+          volumeMounts:
+            - name: cerbos-config
+              mountPath: /config
+            - name: cerbos-policies
+              mountPath: /policies
+            - name: cerbos-audit
+              mountPath: /audit
+      volumes:
+        - name: cerbos-config
+          configMap:
+            name: cerbos-config
+        - name: cerbos-policies
+          configMap:
+            name: cerbos-policies
+        - name: cerbos-audit
+          emptyDir: {}

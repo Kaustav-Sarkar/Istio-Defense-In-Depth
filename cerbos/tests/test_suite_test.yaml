@@ -1,0 +1,95 @@
+name: Test Suite
+principals:
+  alice:
+    id: alice.employee
+    roles: [employee]
+  mary:
+    id: mary.manager
+    roles: [employee, manager]
+  henry:
+    id: henry.hradmin
+    roles: [employee, hr_admin]
+  ivan:
+    id: ivan.itadmin
+    roles: [employee, it_admin]
+resources:
+  alice_profile:
+    kind: employee_profile
+    id: alice.employee
+    attr:
+      id: alice.employee
+      manager_id: mary.manager
+  mary_profile:
+    kind: employee_profile
+    id: mary.manager
+    attr:
+      id: mary.manager
+      manager_id: henry.hradmin
+  alice_laptop:
+    kind: hardware_asset
+    id: laptop-1
+    attr:
+      owner_id: alice.employee
+  holiday_cal:
+    kind: holiday_calendar
+    id: default
+    attr: {}
+tests:
+  - name: Employee profile access
+    input:
+      principals: [alice, mary, henry]
+      resources: [alice_profile, mary_profile]
+      actions: ["view", "view_sensitive", "update"]
+    expected:
+      - principal: alice
+        resource: alice_profile
+        actions:
+          view: EFFECT_ALLOW
+          view_sensitive: EFFECT_ALLOW
+          update: EFFECT_ALLOW
+      - principal: alice
+        resource: mary_profile
+        actions:
+          view: EFFECT_ALLOW
+          view_sensitive: EFFECT_DENY
+          update: EFFECT_DENY
+      - principal: mary
+        resource: alice_profile
+        actions:
+          view: EFFECT_ALLOW
+          view_sensitive: EFFECT_ALLOW
+          update: EFFECT_DENY
+      - principal: henry
+        resource: alice_profile
+        actions:
+          view: EFFECT_ALLOW
+          view_sensitive: EFFECT_ALLOW
+          update: EFFECT_ALLOW
+      - principal: mary
+        resource: mary_profile
+        actions:
+          view: EFFECT_ALLOW
+          view_sensitive: EFFECT_ALLOW
+          update: EFFECT_ALLOW
+      - principal: henry
+        resource: mary_profile
+        actions:
+          view: EFFECT_ALLOW
+          view_sensitive: EFFECT_ALLOW
+          update: EFFECT_ALLOW
+  - name: Hardware access
+    input:
+      principals: [alice, ivan]
+      resources: [alice_laptop]
+      actions: ["view", "assign"]
+    expected:
+      - principal: alice
+        resource: alice_laptop
+        actions:
+          view: EFFECT_ALLOW
+          assign: EFFECT_DENY
+      - principal: ivan
+        resource: alice_laptop
+        actions:
+          view: EFFECT_ALLOW
+          assign: EFFECT_ALLOW

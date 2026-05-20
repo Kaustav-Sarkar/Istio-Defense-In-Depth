@@ -1,0 +1,63 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: bootstrap-vs
+  namespace: istio-system
+spec:
+  hosts:
+    - "app.localtest.me"
+  gateways:
+    - public-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /auth/login
+        - uri:
+            prefix: /auth/callback
+        - uri:
+            prefix: /auth/logout
+        - uri:
+            prefix: /auth/session
+        - uri:
+            prefix: /auth/jwks
+      route:
+        - destination:
+            host: auth-service.zt-apps.svc.cluster.local
+            port:
+              number: 8000
+    - match:
+        - uri:
+            prefix: /api/profile
+      route:
+        - destination:
+            host: ms1-profile-aggregator.zt-apps.svc.cluster.local
+            port:
+              number: 8000
+    - match:
+        - uri:
+            prefix: /api/holidays
+      route:
+        - destination:
+            host: ms4-holiday-calendar.zt-apps.svc.cluster.local
+            port:
+              number: 8000
+    - match:
+        - uri:
+            prefix: /api/offices
+      route:
+        - destination:
+            host: ms5-office-locations.zt-apps.svc.cluster.local
+            port:
+              number: 8000
+    - match:
+        - uri:
+            prefix: /healthz
+      directResponse:
+        status: 200
+        body:
+          string: "Gateway OK\n"
+    - match:
+        - uri:
+            prefix: /
+      redirect:
+        authority: app.localtest.me:8501

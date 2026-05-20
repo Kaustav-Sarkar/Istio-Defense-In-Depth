@@ -1,0 +1,159 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-gateway-to-auth-service
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      app: auth-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account
+      to:
+        - operation:
+            ports: ["8000"]
+    - from:
+        - source:
+            namespaces: ["zt-apps"]
+      to:
+        - operation:
+            ports: ["8000"]
+            paths: ["/auth/jwks"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-gateway-to-tier1
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      tier: tier1
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account
+      to:
+        - operation:
+            ports: ["8000", "8501"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ms1-to-ms2
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      app: ms2-employee-details
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/zt-apps/sa/ms1-profile-aggregator-sa
+      to:
+        - operation:
+            ports: ["8000"]
+      when:
+        - key: request.auth.claims[aud]
+          values: ["ms2-employee-details"]
+        - key: request.auth.claims[act][sub]
+          values: ["ms1-profile-aggregator"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ms1-to-ms3
+  namespace: zt-apps
+spec:
+  selector:
+    matchLabels:
+      app: ms3-hardware-assets
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/zt-apps/sa/ms1-profile-aggregator-sa
+      to:
+        - operation:
+            ports: ["8000"]
+      when:
+        - key: request.auth.claims[aud]
+          values: ["ms3-hardware-assets"]
+        - key: request.auth.claims[act][sub]
+          values: ["ms1-profile-aggregator"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-apps-to-cerbos
+  namespace: zt-security
+spec:
+  selector:
+    matchLabels:
+      app: cerbos
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/zt-apps/sa/ms2-employee-details-sa
+              - cluster.local/ns/zt-apps/sa/ms3-hardware-assets-sa
+              - cluster.local/ns/zt-apps/sa/ms4-holiday-calendar-sa
+              - cluster.local/ns/zt-apps/sa/ms5-office-locations-sa
+      to:
+        - operation:
+            ports: ["3592", "3593"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-auth-to-vault
+  namespace: zt-security
+spec:
+  selector:
+    matchLabels:
+      app: vault
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/zt-apps/sa/auth-service-sa
+              - cluster.local/ns/zt-security/sa/vault-bootstrap
+      to:
+        - operation:
+            ports: ["8200"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-approved-postgres-clients
+  namespace: zt-data
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/zt-apps/sa/auth-service-sa
+              - cluster.local/ns/zt-apps/sa/ms2-employee-details-sa
+              - cluster.local/ns/zt-apps/sa/ms3-hardware-assets-sa
+              - cluster.local/ns/zt-apps/sa/ms4-holiday-calendar-sa
+              - cluster.local/ns/zt-apps/sa/ms5-office-locations-sa
+              - cluster.local/ns/zt-apps/sa/db-seeder-sa
+              - cluster.local/ns/zt-data/sa/postgres-migration-sa
+      to:
+        - operation:
+            ports: ["5432"]

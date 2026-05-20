@@ -1,0 +1,21 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-extauthz
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: CUSTOM
+  provider:
+    name: auth-service-extauthz
+  rules:
+    - to:
+        - operation:
+            paths: ["/api/*"]
+            notPaths: ["/api/offices", "/api/offices/*"]
+    - to:
+        - operation:
+            paths: ["/api/offices", "/api/offices/*"]
+            notMethods: ["GET", "OPTIONS"]
