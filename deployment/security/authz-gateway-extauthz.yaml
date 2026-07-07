@@ -15,7 +15,3 @@ spec:
         - operation:
             paths: ["/api/*"]
             notPaths: ["/api/offices", "/api/offices/*"]
-    - to:
-        - operation:
-            paths: ["/api/offices", "/api/offices/*"]
-            notMethods: ["GET", "OPTIONS"]

@@ -110,12 +110,11 @@ flowchart TD
     Router -->|"/realms/*"| Keycloak
     Router -->|"/auth/*"| AuthService
     Router -->|"Protected /api/* paths"| ExtAuthz
-    Router -->|"GET /api/offices (Bypass ExtAuthz)"| Sidecar5
+    Router -->|"/api/offices (Bypass ExtAuthz)"| Sidecar5
 
     %% Post-Auth Routing
     ExtAuthz -->|"Routes with x-mesh-identity"| Sidecar1
     ExtAuthz -->|"Routes with x-mesh-identity"| Sidecar4
-    ExtAuthz -->|"POST/PUT with x-mesh-identity"| Sidecar5
 
     %% Auth Edge Interactions
     ExtAuthz <-->|"Validates session/bearer, mints x-mesh-identity"| AuthService

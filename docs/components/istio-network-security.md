@@ -314,16 +314,11 @@ rules:
       - operation:
           paths: ["/api/*"]
           notPaths: ["/api/offices", "/api/offices/*"]
-  - to:
-      - operation:
-          paths: ["/api/offices", "/api/offices/*"]
-          notMethods: ["GET", "OPTIONS"]
 ```
 
 This means:
-- All `/api/*` paths require ExtAuthz EXCEPT GET/OPTIONS on `/api/offices*`
-- Office location reads are public (no authentication required at the gateway)
-- Office location writes still require authentication
+- All `/api/*` paths require ExtAuthz **except** `/api/offices*`
+- Office location traffic (reads and writes) bypasses the auth edge; ms5 enforces access via Cerbos and application-level role checks
 
 ---
 

@@ -137,21 +137,37 @@ def test_evaluate_request_it_admin_profile_allowed(mock_validate):
 @patch("ext_authz.oidc.validate_bearer")
 def test_evaluate_request_unauthorized_route_role(mock_validate):
     mock_validate.return_value = {"sub": "alice", "realm_access": {"roles": ["employee"]}}
-    
+
     def mock_headers_get(key, default=None):
         if key == "authorization":
             return "Bearer valid-token"
         return default
-        
+
     request = MagicMock(spec=Request)
     request.headers.get.side_effect = mock_headers_get
-    # Employee tries to access a write route that requires public_data_admin
-    request.url.path = "/api/offices"
+    request.url.path = "/api/holidays"
     request.method = "POST"
-    
-    db = MagicMock()
-    
-    decision = evaluate_request(request, db)
-    
+
+    decision = evaluate_request(request, MagicMock())
+
     assert decision["allowed"] is False
     assert decision.get("reason") == "Unauthorized role for route"
+
+@patch("ext_authz.oidc.validate_bearer")
+def test_evaluate_request_offices_not_in_policy_map(mock_validate):
+    mock_validate.return_value = {"sub": "alice", "realm_access": {"roles": ["public_data_admin"]}}
+
+    def mock_headers_get(key, default=None):
+        if key == "authorization":
+            return "Bearer valid-token"
+        return default
+
+    request = MagicMock(spec=Request)
+    request.headers.get.side_effect = mock_headers_get
+    request.url.path = "/api/offices"
+    request.method = "POST"
+
+    decision = evaluate_request(request, MagicMock())
+
+    assert decision["allowed"] is False
+    assert decision.get("reason") == "Route not defined in coarse policy map"

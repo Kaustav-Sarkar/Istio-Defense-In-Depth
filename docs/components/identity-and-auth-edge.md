@@ -162,10 +162,10 @@ The policy map is a static route→roles→audience table:
 | Route Pattern | Method | Allowed Roles | Audience |
 |---------------|--------|---------------|----------|
 | `/api/profile/*` | Any | employee, manager, hr_admin, it_admin | ms1, ms2, ms3 |
-| `/api/offices*` | GET | employee, manager, hr_admin, it_admin, public_data_admin, security_auditor | ms5 |
-| `/api/offices*` | POST/PUT/DELETE/PATCH | public_data_admin | ms5 |
 | `/api/holidays*` | GET | employee, manager, hr_admin, it_admin, public_data_admin, security_auditor | ms4 |
 | `/api/holidays*` | POST/PUT/DELETE/PATCH | public_data_admin, hr_admin | ms4 |
+
+`/api/offices*` (ms5) is **not** handled by ExtAuthz. The gateway `AuthorizationPolicy` excludes that path entirely; ms5 applies its own Cerbos checks and falls back to an anonymous/public context when no mesh identity is present.
 
 This is intentionally coarse — it gates route-level access. Fine-grained resource/field-level decisions happen downstream at Cerbos.
 

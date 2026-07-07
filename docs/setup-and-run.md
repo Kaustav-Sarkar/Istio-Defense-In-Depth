@@ -71,7 +71,7 @@ The local Vault deployment uses file storage with Shamir sealing. **Every time t
 **Symptoms**
 
 - You are logged in (`/auth/session` works) but profile queries in the UI fail with **403**.
-- `GET /api/offices` may still work (that route skips extauthz for GET).
+- `GET /api/offices` may still work (that route bypasses ExtAuthz entirely).
 - auth-service logs show `500` on `/verify/api/profile/...`.
 
 **Check**
@@ -153,9 +153,9 @@ Demonstrate how different roles see different data shapes for the same API.
 
 Office locations and holidays are both “company-wide” data, but the gateway treats them differently:
 
-1. **`GET /api/offices` (no login):**
+1. **`/api/offices` (no login):**
    - Navigate to `https://app.localtest.me/api/offices` without logging in.
-   - Observe a **200** response with office data. The gateway `AuthorizationPolicy` skips ExtAuthz for `GET` on this path; the app assigns an anonymous/public Cerbos context.
+   - Observe a **200** response with office data. The gateway `AuthorizationPolicy` skips ExtAuthz for all methods on this path; ms5 assigns an anonymous/public Cerbos context.
 
 2. **`/api/holidays` (login required):**
    - Navigate to `https://app.localtest.me/api/holidays` without logging in.
@@ -163,7 +163,7 @@ Office locations and holidays are both “company-wide” data, but the gateway 
 
 3. **After login:**
    - Login as any user (e.g., `alice.employee` / `alice-password`).
-   - Both `/api/holidays` and `/api/offices` return data with role-appropriate visibility (Cerbos + RLS).
+   - `/api/holidays` returns data with role-appropriate visibility (Cerbos + RLS). `/api/offices` remains publicly readable at the gateway; write operations are gated inside ms5.
 
 ## 3. Automated Validation
 

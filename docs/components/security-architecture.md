@@ -192,14 +192,16 @@ rules:
   - to:
       operation:
         paths: ["/api/*"]
-        notPaths: ["/api/offices", "/api/offices/*"]   # public GET allowed
+        notPaths: ["/api/offices", "/api/offices/*"]   # ms5 bypasses ExtAuthz entirely
 ```
 
 What auth-service does during `/verify`:
 
 1. **Checks bearer token or session cookie** — validates one of the two credential types
-2. **Coarse route/role policy** — `employee` can reach `/api/profile`, only `public_data_admin` can write to `/api/offices`
+2. **Coarse route/role policy** — e.g. `employee` can reach `/api/profile/*`; `public_data_admin` or `hr_admin` can write to `/api/holidays`
 3. **On ALLOW: mints a mesh token** — calls Vault Transit to sign an `x-mesh-identity` JWT encoding the verified identity
+
+Routes under `/api/offices*` never reach this path; ms5 handles authorization at the application layer.
 
 The Istio mesh config specifies exactly what headers go to auth-service and what comes back:
 

@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Request
 from sqlalchemy.orm import Session
 from config import settings
@@ -43,7 +45,6 @@ def evaluate_request(request: Request, db: Session) -> dict:
 
             username = decoded.get("preferred_username")
             if username:
-                import uuid
                 subject = str(uuid.uuid5(uuid.NAMESPACE_URL, f"istio-security://users/{username}"))
             else:
                 subject = decoded.get("sub")
@@ -84,12 +85,6 @@ def evaluate_request(request: Request, db: Session) -> dict:
     if path.startswith("/api/profile/"):
         allowed_roles = {"employee", "manager", "hr_admin", "it_admin"}
         decision["audience"] = ["ms1-profile-aggregator", "ms2-employee-details", "ms3-hardware-assets"]
-    elif path.startswith("/api/offices") and method == "GET":
-        allowed_roles = {"employee", "manager", "hr_admin", "it_admin", "public_data_admin", "security_auditor"}
-        decision["audience"] = ["ms5-office-locations"]
-    elif path.startswith("/api/offices") and method in ("POST", "PUT", "DELETE", "PATCH"):
-        allowed_roles = {"public_data_admin"}
-        decision["audience"] = ["ms5-office-locations"]
     elif path.startswith("/api/holidays") and method == "GET":
         allowed_roles = {"employee", "manager", "hr_admin", "it_admin", "public_data_admin", "security_auditor"}
         decision["audience"] = ["ms4-holiday-calendar"]
